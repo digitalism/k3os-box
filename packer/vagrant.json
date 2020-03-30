@@ -20,7 +20,19 @@
     "post_shutdown_delay": "10s",
     "format":"ova"
   }],
-  "post-processors": [ 
-    "vagrant"]
+  "provisioners":[
+    {
+      "type": "shell",
+      "execute_command": "{{ .Vars }} sudo -E sh '{{ .Path }}'",
+      "inline": ["rm -rf /var/lib/rancher/k3s", " rm /home/vagrant/VBoxGuestAdditions.iso", "echo provision done"]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "keep_input_artifact": false,
+      "output": "k3os_{{.Provider}}.box"
+    }
+  ]
 }
 

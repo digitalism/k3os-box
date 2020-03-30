@@ -1,5 +1,6 @@
 packer_cache
 output-virtualbox-iso
-packer_virtualbox-iso_virtualbox.box
-.DS_Store
+*.box
 *.swp
+.vagrant
+.DS_Store
