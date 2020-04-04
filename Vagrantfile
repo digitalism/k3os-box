@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "wjimenez5271/k3os"
+  config.vm.box = "k3os"
   # Optional for using a local build, replace the above with the name of 
   # your local box image
   config.vm.guest = "linux"

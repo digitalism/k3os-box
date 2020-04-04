@@ -1,58 +1,53 @@
-# k3os on Vagrant
+# k3OS on Vagrant
 
-### Purpose
-For testing and experimentation with [k3os](https://github.com/rancher/k3os) in your local environment. Quickly spin up k3os virtual machines 
-using [Vagrant](https://www.vagrantup.com/) and Virtualbox
-
-### What is k3os? 
-k3os is a purpose built OS for [Kubernetes](https://kubernetes.io/), fully managed by Kubernetes. It is developed by [Rancher Labs](https://rancher.com/) and the open source community. 
-
-### Super Quick Start
-
-Use the [prebuit image](https://app.vagrantup.com/wjimenez5271/boxes/k3os) provided through Vagrant Cloud by running from the root of this repo (should use the included `Vagrantfile`)
-
-```
-vagrant up
-```
-
-Then:
-
-```
-vagrant ssh
-```
-
-### Quick Start
+## Quick Start
 
 1. Build vagrant box image using [Packer](https://www.packer.io/): 
 
 ```
-packer build packer/vagrant.json
+packer build vagrant.json
 ```
 
-2. Import vagrant box image into your local Vagrant install: 
-
-```
-vagrant box add packer_virtualbox-iso_virtualbox.box --name k3os
-```
-
-3. Edit the provided `Vagrantfile` in the root of this repo to reference the name of your image (in this example `k3os`)
-
-```
-config.vm.box = "k3os"
-```
-
-4. From the repo root (might need to `cd ../`) run:
+4. Run the Vagrant box:
 
 ```
 vagrant up
 ```
 
-You can then login to the box using `vagrant ssh`. See [Vagrant Docs](https://www.vagrantup.com/docs/index.html) for more details on how to use Vagrant
+You can then login to the box using `vagrant ssh`. See [Vagrant
+Docs](https://www.vagrantup.com/docs/index.html) for more details on how
+to use Vagrant
 
-### Notes
-Folder sync currently not supported. You can also create your own `Vagrantfile` just note the addition of 
-`config.vm.guest = "linux"` to tell it Vagrant which OS to expect and  
-`config.vm.synced_folder ".", "/vagrant", disabled: true` to disable folder syncing
+## Notes
 
-### Questions/Feedback
-Send me an email or find me on the [Rancher community slack](https://slack.rancher.io/), my username is `william`
+The generated box does not have the Virtualbox Guest Additions
+installed. Most of the configuration options will not work. this is
+specially true for:
+
+* `config.vm.hostname`
+* `config.vm.synced_folder`
+* `config.vm.network`
+
+The shell provisioner is working but requires some tweaking. The
+provisioning shell script will be put into `/tmp/vagrant-shell`. The
+file can be written but can not be executed. To mitigate this
+limitation, one have to set the `upload_path` option.
+
+```
+config.vm.provision 'shell',
+  upload_path: '/home/rancher/vagrant-shell',
+  inline: <<-SHELL
+mkdir -p /mnt
+mount /dev/sda1 /mnt
+cat <<EOF > /mnt/k3os/system/config.yaml
+k3os:
+  token: EbvX0V38syjPQBZJ71tb9EIHbyL5mISBqDSTa2aJt7LSCF1JEW
+  password: rancher
+EOF
+reboot
+SHELL
+```
+
+The above example also shows how the k3OS config can be changed. When
+you do so, you have to set the password to `rancher`. If this is not the
+case, vagrant will not be able to login.

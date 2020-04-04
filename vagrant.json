@@ -1,0 +1,50 @@
+{
+  "variables": {
+    "version": "v0.10.0-dev1",
+    "checksum": "a8c8c94689feae9cfcf6deb7b72eb13c6caca793fb073202a43f1fd210c6c06d"
+  },
+  "builders": [{
+    "type": "virtualbox-iso",
+    "boot_wait": "6s",
+    "boot_command": [
+      "<enter>",
+      "<wait30>",
+      "rancher",
+      "<enter>",
+      "sudo k3os install",
+      "<enter>",
+      "1",
+      "<enter>",
+      "y",
+      "<enter>",
+      "http://{{ .HTTPIP }}:{{ .HTTPPort }}/cloud-config.yml",
+      "<enter>",
+      "y",
+      "<enter>"
+    ],
+    "guest_os_type": "Linux_64",
+    "http_directory": ".",
+    "iso_url": "https://github.com/rancher/k3os/releases/download/{{user `version`}}/k3os-amd64.iso",
+    "iso_checksum": "{{user `checksum`}}",
+    "iso_checksum_type": "sha256",
+    "ssh_username": "vagrant",
+    "ssh_private_key_file": "vagrant-ssh-default.pem",
+    "ssh_wait_timeout": "1000s",
+    "disk_size": "8000",
+    "shutdown_command": "sudo poweroff",
+    "post_shutdown_delay": "10s",
+    "format": "ova"
+
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "execute_command": "{{ .Vars }} sudo -E sh '{{ .Path }}'",
+    "inline": ["rm -rf /var/lib/rancher/k3s", " rm /home/vagrant/VBoxGuestAdditions.iso", "echo provision done"]
+  }],
+  "post-processors": [{
+    "type": "vagrant",
+    "keep_input_artifact": false,
+    "output": "k3os_{{.Provider}}.box",
+    "vagrantfile_template": "vagrantfile.template"
+  }]
+}
