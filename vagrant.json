@@ -1,7 +1,7 @@
 {
   "variables": {
-    "version": "v0.10.0-dev1",
-    "checksum": "a8c8c94689feae9cfcf6deb7b72eb13c6caca793fb073202a43f1fd210c6c06d"
+    "version": "v0.9.1",
+    "checksum": "32d6a9475532a3ddd55baa886e84ae8a0aaa8bd949b96ef4341e78180f5b8af7"
   },
   "builders": [{
     "type": "virtualbox-iso",
@@ -31,7 +31,7 @@
     "ssh_private_key_file": "vagrant-ssh-default.pem",
     "ssh_wait_timeout": "1000s",
     "disk_size": "8000",
-    "shutdown_command": "sudo poweroff",
+    "shutdown_command": "sudo halt",
     "post_shutdown_delay": "10s",
     "format": "ova"
 
@@ -39,12 +39,12 @@
   "provisioners": [{
     "type": "shell",
     "execute_command": "{{ .Vars }} sudo -E sh '{{ .Path }}'",
-    "inline": ["rm -rf /var/lib/rancher/k3s", " rm /home/vagrant/VBoxGuestAdditions.iso", "echo provision done"]
+    "inline": ["rm -rf /var/lib/rancher/k3s", " rm /home/rancher/VBoxGuestAdditions.iso", "echo provision done"]
   }],
   "post-processors": [{
     "type": "vagrant",
     "keep_input_artifact": false,
     "output": "k3os_{{.Provider}}.box",
-    "vagrantfile_template": "vagrantfile.template"
+    "vagrantfile_template": "Vagrantfile"
   }]
 }

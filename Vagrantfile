@@ -1,75 +1,68 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
-Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+# Based on https://github.com/rancher/quickstart
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "k3os"
-  # Optional for using a local build, replace the above with the name of 
-  # your local box image
-  config.vm.guest = "linux"
-  config.vm.synced_folder ".", "/vagrant", disabled: true
+# Create a file called `config.json` with the following contents:
 
+# k3os_version: 0.9.1
+# k3s_token: 8aw47ft0w864ft08w64ftwa7eag8w7t
+# linked_clones: true
+# net:
+#   network_type: private_network
+# server:
+#   cpus: 1
+#   memory: 2000
+# node:
+#   count: 3
+#   cpus: 2
+#   memory: 2000
+# ip:
+#   server: 172.22.101.101
+#   node: 172.22.101.111 # ip of first node
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+require 'ipaddr'
+require 'yaml'
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+x = YAML.load_file('config.yaml')
+puts "Config: #{x.inspect}\n\n"
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+Vagrant.configure(2) do |config|
+  config.vbguest.auto_update = false if Vagrant.has_plugin?("vagrant-vbguest") # disable conflicting plugin
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.define "k3os-server" do |server|
+      c = x.fetch('server')
+      server.vm.box= "digitalism/k3os-box"
+      server.vm.box_version = x.fetch('k3os_version')
+      server.vm.guest = :linux
+      server.vm.provider "virtualbox" do |v|
+        v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        v.cpus = c.fetch('cpus')
+        v.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0') and x.fetch('linked_clones')
+        v.memory = c.fetch('memory')
+      end
+      config.vm.synced_folder '.', '/vagrant', disabled: true
+      server.vm.network x.fetch('net').fetch('network_type'), ip: x.fetch('ip').fetch('server'), auto_config: false
+      server.vm.provision "shell", path: "scripts/configure_k3s_server.sh", upload_path: '/home/rancher/configure_k3s_server.sh', args: [x.fetch('k3s_token'), x.fetch('ip').fetch('server')]
+  end
 
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
+  node_ip_base = IPAddr.new(x.fetch('ip').fetch('node'))
+  (1..x.fetch('node').fetch('count')).each do |i|
+    c = x.fetch('node')
+    hostname = "k3os-%d" % i
+    config.vm.define hostname do |node|
+      node.vm.box = "digitalism/k3os-box"
+      node.vm.box_version = x.fetch('k3os_version')
+      node.vm.guest = :linux
+      node.vm.provider "virtualbox" do |v|
+        v.cpus = c.fetch('cpus')
+        v.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0') and x.fetch('linked_clones')
+        v.memory = c.fetch('memory')
+      end
+      config.vm.synced_folder '.', '/vagrant', disabled: true
+      node_ip = IPAddr.new(node_ip_base.to_i + i - 1, Socket::AF_INET).to_s 
+      node.vm.network x.fetch('net').fetch('network_type'), ip: node_ip, auto_config: false
+      node.vm.provision "shell", path: "scripts/configure_k3s_node.sh", upload_path: '/home/rancher/configure_k3s_node.sh', args: [x.fetch('k3s_token'), x.fetch('ip').fetch('server'), node_ip, i]
+    end
+  end
 end
