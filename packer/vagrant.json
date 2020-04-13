@@ -1,7 +1,7 @@
 {
   "variables": {
-    "version": "v0.9.1",
-    "checksum": "32d6a9475532a3ddd55baa886e84ae8a0aaa8bd949b96ef4341e78180f5b8af7"
+    "version": "v0.10.0",
+    "checksum": "58ef0d1996c91c60e93d0c48e6e963f55a7f4149699984d2b6900d3e1356a69a"
   },
   "builders": [{
     "type": "virtualbox-iso",
@@ -17,7 +17,7 @@
       "<enter>",
       "y",
       "<enter>",
-      "http://{{ .HTTPIP }}:{{ .HTTPPort }}/cloud-config.yml",
+      "http://{{ .HTTPIP }}:{{ .HTTPPort }}/packer/cloud-config.yml",
       "<enter>",
       "y",
       "<enter>"
@@ -28,7 +28,7 @@
     "iso_checksum": "{{user `checksum`}}",
     "iso_checksum_type": "sha256",
     "ssh_username": "vagrant",
-    "ssh_private_key_file": "vagrant-ssh-default.pem",
+    "ssh_private_key_file": "packer/vagrant-ssh-default.pem",
     "ssh_wait_timeout": "1000s",
     "disk_size": "8000",
     "shutdown_command": "sudo halt",

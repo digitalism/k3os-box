@@ -21,7 +21,7 @@ See [Vagrant Docs](https://www.vagrantup.com/docs/index.html) for more details o
 Build vagrant box image using [Packer](https://www.packer.io/): 
 
 ```
-packer build vagrant.json
+packer build packer/vagrant.json
 vagrant box add k3os_virtualbox.box --name k3os
 ```
 
