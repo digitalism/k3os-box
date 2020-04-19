@@ -26,10 +26,12 @@ hostname: k3os-server
 k3os:
   k3s_args:
     - server
+#    - "-v=1"
     - "--token=${k3s_token}"
-    - "--flannel-backend=ipsec"
+    - "--bind-address=${k3s_server_ip}"
     - "--advertise-address=${k3s_server_ip}"
-    - "--node-name=k3os-server"
+    - "--flannel-backend=ipsec"
+    - "--flannel-iface=eth1"
     - "--node-ip=${k3s_server_ip}"
     - "--node-external-ip=${k3s_server_ip}"
 EOF

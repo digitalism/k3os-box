@@ -25,7 +25,6 @@ require 'ipaddr'
 require 'yaml'
 
 x = YAML.load_file('config.yaml')
-puts "Config: #{x.inspect}\n\n"
 
 Vagrant.configure(2) do |config|
   config.vbguest.auto_update = false if Vagrant.has_plugin?("vagrant-vbguest") # disable conflicting plugin
@@ -37,13 +36,15 @@ Vagrant.configure(2) do |config|
       server.vm.guest = :linux
       server.vm.provider "virtualbox" do |v|
         v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        v.customize ['modifyvm', :id, '--natnet1', '192.168.222.0/24']
         v.cpus = c.fetch('cpus')
         v.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0') and x.fetch('linked_clones')
         v.memory = c.fetch('memory')
       end
       config.vm.synced_folder '.', '/vagrant', disabled: true
-      server.vm.network x.fetch('net').fetch('network_type'), ip: x.fetch('ip').fetch('server'), auto_config: false
-      server.vm.provision "shell", path: "scripts/configure_k3s_server.sh", upload_path: '/home/rancher/configure_k3s_server.sh', args: [x.fetch('k3s_token'), x.fetch('ip').fetch('server')]
+      server_ip = x.fetch('ip').fetch('server')
+      server.vm.network x.fetch('net').fetch('network_type'), ip: server_ip, auto_config: false
+      server.vm.provision "shell", path: "scripts/configure_k3s_server.sh", upload_path: '/home/rancher/configure_k3s_server.sh', args: [x.fetch('k3s_token'), server_ip]
   end
 
   node_ip_base = IPAddr.new(x.fetch('ip').fetch('node'))
@@ -55,6 +56,7 @@ Vagrant.configure(2) do |config|
       node.vm.box_version = x.fetch('k3os_version')
       node.vm.guest = :linux
       node.vm.provider "virtualbox" do |v|
+        v.customize ['modifyvm', :id, '--natnet1', '192.168.222.0/24']
         v.cpus = c.fetch('cpus')
         v.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0') and x.fetch('linked_clones')
         v.memory = c.fetch('memory')

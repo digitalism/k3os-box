@@ -1,6 +1,6 @@
 # Based on https://github.com/rancher/quickstart
 
-k3os_version: 0.9.1
+k3os_version: 0.10.0
 k3s_token: 8aw47ft0w864ft08w64ftwa7eag8w7t
 linked_clones: true
 net:
